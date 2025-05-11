@@ -17,34 +17,19 @@ schtasks /delete /tn "UpdaterTask" /f
 |---------------------|------------------------------------------------------------------------------|
 | **Name**| DeviceProcessEvents|
 | **Info**|	https://learn.microsoft.com/en-us/defender-xdr/deviceprocessevents-table |
-| **Purpose**| 	Detects the creation and execution of the scheduled task (schtasks.exe). |
-
-| **Parameter**       | **Description**                                                              |
-|---------------------|------------------------------------------------------------------------------|
-| **Name**| DeviceScheduledTaskEvents |
-| **Info**|https://learn.microsoft.com/en-us/defender-xdr/devicescheduledtaskevents-table|
-| **Purpose**| Detects details about new scheduled tasks, their authors, and commands used. |
+| **Purpose**| 	Detects the creation/execution/deletion of the scheduled task (schtasks.exe). |
 
 ---
 
 ## Related Queries:
 ```kql
-// Look for the creation of scheduled tasks
+// Look for the creation/execution/deletion of scheduled tasks
 DeviceProcessEvents
-| where FileName == "schtasks.exe"
-| where ProcessCommandLine has "/create"
-| project Timestamp, DeviceName, AccountName, ProcessCommandLine
-
-// Look for execution of the scheduled task (e.g., notepad.exe being launched from task scheduler)
-DeviceProcessEvents
-| where InitiatingProcessFileName == "taskhostw.exe"
-| project Timestamp, DeviceName, FileName, ProcessCommandLine, InitiatingProcessCommandLine
-
-// Look for scheduled task deletion
-DeviceProcessEvents
-| where FileName == "schtasks.exe"
-| where ProcessCommandLine has "/delete"
-| project Timestamp, DeviceName, AccountName, ProcessCommandLine
+| where DeviceName == "huy"
+| where FileName in~ ("schtasks.exe", "powershell.exe")
+| where ProcessCommandLine has_any ("create", "schedule", "schtasks", "register-scheduledtask")
+| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine, InitiatingProcessFileName
+| order by Timestamp desc
 ```
 
 ---
